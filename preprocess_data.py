@@ -1,4 +1,4 @@
-import os, sys
+import os
 from PIL import Image
 
 min_size = 300
@@ -9,9 +9,9 @@ RAW_HEALTHY = './data/raw/healthy/'
 
 PREPROCESSED = './data/preprocessed/'
 
-def preprocess(directory, files, flag):
-    for i in range(len(files)):
-        outfile = PREPROCESSED + str(i) + '_' + flag + '.jpg'
+def preprocess(directory, files, flag, quantity):
+    for i in range(quantity):
+        outfile = PREPROCESSED +'/' + flag + '/' + str(i) + '.jpg'
         im = Image.open(directory + files[i])
         im.thumbnail(t_size, Image.ANTIALIAS)
         x, y = im.size
@@ -28,5 +28,5 @@ f_healty = []
 for (dirpath, dirnames, filenames) in os.walk(RAW_HEALTHY):
     f_healty.extend(filenames)
 
-preprocess(RAW_SICK, f_sick, 'sick')
-preprocess(RAW_HEALTHY, f_healty, 'healthy')
+preprocess(RAW_SICK, f_sick, 'sick', len(f_sick))
+preprocess(RAW_HEALTHY, f_healty, 'healthy', len(f_sick) + 10)
