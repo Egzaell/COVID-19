@@ -1,13 +1,13 @@
 import os
 from PIL import Image
 
-min_size = 300
+min_size = 100
 t_size = min_size, min_size
 
 RAW_SICK = './data/raw/sick/'
 RAW_HEALTHY = './data/raw/healthy/'
 
-PREPROCESSED = './data/preprocessed/'
+PREPROCESSED = './data/preprocessed/simpleNN'
 
 def preprocess(directory, files, flag, quantity):
     for i in range(quantity):
@@ -28,5 +28,5 @@ f_healty = []
 for (dirpath, dirnames, filenames) in os.walk(RAW_HEALTHY):
     f_healty.extend(filenames)
 
-preprocess(RAW_SICK, f_sick, 'sick', len(f_sick))
+#preprocess(RAW_SICK, f_sick, 'sick', len(f_sick))
 preprocess(RAW_HEALTHY, f_healty, 'healthy', len(f_sick) + 10)
