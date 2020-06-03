@@ -1,4 +1,6 @@
-import os, shutil, glob
+import os
+import shutil
+import glob
 import random
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,17 +15,22 @@ from imutils import paths
 import cv2
 from tensorflow.keras.utils import to_categorical
 from sklearn.preprocessing import LabelBinarizer
+import plotly.offline as py
+import plotly.graph_objects as go
+
 
 class LearningMode(Enum):
     CONVOLUTIONAL = 1
     SIMPLE_NN = 2
 
+
 class ExecutionMode(Enum):
     LEARNING = 1
     TEST = 2
 
+
 class Config:
-    def __init__(self, mode=LearningMode.CONVOLUTIONAL, execution_mode = ExecutionMode.LEARNING):
+    def __init__(self, mode=LearningMode.CONVOLUTIONAL, execution_mode=ExecutionMode.LEARNING):
         self.execution_mode = execution_mode
         self.mode = mode
         self.base_data_dir = './data/preprocessed/SimpleNN/'
@@ -33,23 +40,29 @@ class Config:
         self.model_path = os.path.join('models', mode.name + '.model')
         #self.p_path = os.path.join('pickles', mode.name + '.p')
         self.size = 100
-        self.accuracy_chart_path = os.path.join('charts', datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + '.' + mode.name + '.model.jpg')
+        self.accuracy_chart_path = os.path.join('charts', datetime.now().strftime(
+            "%d_%m_%Y_%H_%M_%S") + '.' + mode.name + '.model.jpg')
         self.epochs = 5
         self.batch_size = 100
 
-_config = Config(mode=LearningMode.CONVOLUTIONAL, execution_mode = ExecutionMode.LEARNING)
+
+_config = Config(mode=LearningMode.CONVOLUTIONAL,
+                 execution_mode=ExecutionMode.LEARNING)
+
 
 def remove_files(dir):
     files = glob.glob(dir + '*.jpg')
     for f in files:
         os.remove(f)
 
+
 def get_files(dir):
     all_files = []
     for (dirpath, dirnames, filenames) in os.walk(dir):
         all_files.extend(filenames)
-    
+
     return all_files
+
 
 def split_files():
     sick_files = get_files(_config.base_data_dir + 'sick/')
@@ -69,8 +82,9 @@ def split_files():
             dest = _config.val_dir + 'sick/'
         elif i >= sick_train_set_size + sick_val_set_size:
             dest = _config.test_dir + 'sick/'
-    
-        shutil.copyfile(_config.base_data_dir+ 'sick/' + sick_files[i], dest + sick_files[i])
+
+        shutil.copyfile(_config.base_data_dir + 'sick/' +
+                        sick_files[i], dest + sick_files[i])
 
     for i in range(len(healthy_files)):
         dest = ''
@@ -80,41 +94,47 @@ def split_files():
             dest = _config.val_dir + 'healthy/'
         elif i >= healthy_train_set_size + healthy_val_set_size:
             dest = _config.test_dir + 'healthy/'
-    
-        shutil.copyfile(_config.base_data_dir+ 'healthy/' + healthy_files[i], dest + healthy_files[i])
+
+        shutil.copyfile(_config.base_data_dir + 'healthy/' +
+                        healthy_files[i], dest + healthy_files[i])
 
 
 def create_convolutional_model():
     model = Sequential()
-    model.add(Conv2D((16), (3,3), activation='relu', input_shape=(_config.size, _config.size, 3)))
-    model.add(MaxPooling2D(2,2))
-    model.add(Conv2D((32), (3,3), activation='relu'))
-    model.add(MaxPooling2D(2,2))
-    model.add(Conv2D((64), (3,3), activation='relu'))
-    model.add(MaxPooling2D(2,2))
-    model.add(Conv2D((128), (3,3), activation='relu'))
-    model.add(MaxPooling2D(2,2))
-    model.add(Conv2D((128), (3,3), activation='relu'))
+    model.add(Conv2D((16), (3, 3), activation='relu',
+                     input_shape=(_config.size, _config.size, 3)))
+    model.add(MaxPooling2D(2, 2))
+    model.add(Conv2D((32), (3, 3), activation='relu'))
+    model.add(MaxPooling2D(2, 2))
+    model.add(Conv2D((64), (3, 3), activation='relu'))
+    model.add(MaxPooling2D(2, 2))
+    model.add(Conv2D((128), (3, 3), activation='relu'))
+    model.add(MaxPooling2D(2, 2))
+    model.add(Conv2D((128), (3, 3), activation='relu'))
     model.add(Dropout(0.5))
     model.add(Flatten())
     model.add(Dense(512, activation='relu'))
     model.add(Dense(1, activation='sigmoid'))
     model.summary()
-    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['acc'])
+    model.compile(loss='binary_crossentropy',
+                  optimizer='adam', metrics=['acc'])
     return model
+
 
 def create_simpleNN_model():
     model = Sequential()
-    model.add(Flatten(input_shape=(100,100,3)))
+    model.add(Flatten(input_shape=(100, 100, 3)))
     model.add(Dense(2500, activation='relu'))
     model.add(Dense(512, activation='relu'))
     model.add(Dense(2, activation='sigmoid'))
-    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['acc'])
+    model.compile(loss='binary_crossentropy',
+                  optimizer='adam', metrics=['acc'])
     return model
 
+
 def load_test_data():
-    sick_files = glob.glob(_config.test_dir+ 'sick/*.jpg')
-    healthy_files = glob.glob(_config.test_dir+ 'healthy/*.jpg')
+    sick_files = glob.glob(_config.test_dir + 'sick/*.jpg')
+    healthy_files = glob.glob(_config.test_dir + 'healthy/*.jpg')
     length = len(sick_files) + len(healthy_files)
 
     x = np.zeros((length, _config.size, _config.size, 3), dtype='float')
@@ -122,14 +142,17 @@ def load_test_data():
 
     for i in range(len(sick_files)):
         y[i] = 1
-        img = image.load_img(sick_files[i], target_size=(_config.size, _config.size))
+        img = image.load_img(sick_files[i], target_size=(
+            _config.size, _config.size))
         x[i] = image.img_to_array(img)
 
     for i in range(len(healthy_files)):
-        img = image.load_img(healthy_files[i], target_size=(_config.size, _config.size))
+        img = image.load_img(healthy_files[i], target_size=(
+            _config.size, _config.size))
         x[i + len(sick_files)] = image.img_to_array(img)
 
     return x, y
+
 
 def perform_one_hot_encoding(items):
     lb = LabelBinarizer()
@@ -137,30 +160,55 @@ def perform_one_hot_encoding(items):
     items = to_categorical(items)
     return items
 
+
 def print_accuracy_chart(history):
     acc = history.history['acc']
     val_acc = history.history['val_acc']
 
-    epochs = range(1, len(acc) +1)
-    plt.plot(epochs, acc, 'bo', label='acc')
-    plt.plot(epochs, val_acc, 'b', label='val_acc')
-    plt.legend()
-    plt.savefig(_config.accuracy_chart_path)
+    loss = history.history['loss']
+    val_loss = history.history['val_loss']
+
+    acc = go.Scatter(x=np.arange(0, len(acc), 1), y=acc, mode='lines', name='Accuracy',
+                     line=dict(color=('rgb(16, 117, 43)'), width=3))
+
+    val_acc = go.Scatter(x=np.arange(0, len(val_acc), 1), y=val_acc, mode='lines', name='Validation Accuracy',
+                         line=dict(color=('rgb(204, 193, 35)'), width=3))
+
+    loss = go.Scatter(x=np.arange(0, len(loss), 1), y=loss, mode='lines', name='Loss',
+                      line=dict(color=('rgb(72, 9, 99)'), width=4))
+
+    val_loss = go.Scatter(x=np.arange(0, len(val_loss), 1), y=val_loss, mode='lines', name='Validation Loss',
+                          line=dict(color=('rgb(94, 6, 19)'), width=4))
+
+    data = [acc, val_acc, loss, val_loss]
+    layout = dict(title='Learning process history', xaxis=dict(
+        title='Epoch'), yaxis=dict(title='Value'))
+
+    fig = dict(data=data, layout=layout)
+    py.plot(fig, filename='chart.html')
+
 
 def convolutional_learning():
     model = create_convolutional_model()
 
-    train_datagen = ImageDataGenerator(rotation_range=10, width_shift_range=0.2, height_shift_range=0.2, zoom_range=0.2)
-    test_datagen = ImageDataGenerator(rotation_range=10, width_shift_range=0.15, height_shift_range=0.15, zoom_range=0.2)
+    train_datagen = ImageDataGenerator(
+        rotation_range=10, width_shift_range=0.2, height_shift_range=0.2, zoom_range=0.2)
+    test_datagen = ImageDataGenerator(
+        rotation_range=10, width_shift_range=0.15, height_shift_range=0.15, zoom_range=0.2)
 
-    train_generator = train_datagen.flow_from_directory(_config.train_dir, target_size=(_config.size, _config.size), batch_size=_config.batch_size, class_mode='binary')
-    val_generator = test_datagen.flow_from_directory(_config.val_dir, target_size=(_config.size, _config.size), batch_size=_config.batch_size, class_mode='binary')
+    train_generator = train_datagen.flow_from_directory(_config.train_dir, target_size=(
+        _config.size, _config.size), batch_size=_config.batch_size, class_mode='binary')
+    val_generator = test_datagen.flow_from_directory(_config.val_dir, target_size=(
+        _config.size, _config.size), batch_size=_config.batch_size, class_mode='binary')
 
-    cb = [ModelCheckpoint(_config.model_path, monitor='val_acc', save_best_only=True)]
-    
-    history = model.fit_generator(train_generator, steps_per_epoch=100, epochs=_config.epochs , validation_data=val_generator, validation_steps=50, callbacks=cb)
+    cb = [ModelCheckpoint(_config.model_path,
+                          monitor='val_acc', save_best_only=True)]
+
+    history = model.fit_generator(train_generator, steps_per_epoch=100, epochs=_config.epochs,
+                                  validation_data=val_generator, validation_steps=50, callbacks=cb)
 
     print_accuracy_chart(history)
+
 
 def simpleNN_learning():
     print("[INFO] loading images...")
@@ -174,15 +222,14 @@ def simpleNN_learning():
         label = imagePath.split(os.path.sep)[-2]
 
         # load the image, swap color channels, and resize it to be a fixed
-        
+
         image = cv2.imread(imagePath)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = cv2.resize(image, (_config.size, _config.size))
 
-        # update the data and labels lists, respectively    
+        # update the data and labels lists, respectively
         data.append(image)
         labels.append(label)
-
 
     model = create_simpleNN_model()
 
@@ -191,9 +238,12 @@ def simpleNN_learning():
 
     labels = perform_one_hot_encoding(labels)
 
-    cb = [ModelCheckpoint(_config.model_path, monitor='val_acc', save_best_only=True)]
-    history = model.fit(data, labels, batch_size=_config.batch_size, epochs=_config.epochs, validation_split=0.2, callbacks=cb)
+    cb = [ModelCheckpoint(_config.model_path,
+                          monitor='val_acc', save_best_only=True)]
+    history = model.fit(data, labels, batch_size=_config.batch_size,
+                        epochs=_config.epochs, validation_split=0.2, callbacks=cb)
     print_accuracy_chart(history)
+
 
 remove_files(_config.train_dir + 'sick/')
 remove_files(_config.val_dir + 'sick/')
@@ -215,7 +265,7 @@ if(_config.execution_mode == ExecutionMode.LEARNING):
 test_x, test_y = load_test_data()
 model = load_model(_config.model_path)
 
-if(_config.mode == LearningMode.SIMPLE_NN): #only SimpleNN model needs one hot encoding
+if(_config.mode == LearningMode.SIMPLE_NN):  # only SimpleNN model needs one hot encoding
     test_y = perform_one_hot_encoding(test_y)
 
 result = model.evaluate(test_x, test_y, batch_size=64)
